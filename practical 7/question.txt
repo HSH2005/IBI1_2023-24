@@ -1,0 +1,5 @@
+Question:How has the DALYs changed in the UK over time?
+Hypothesis: The DALYs value keep on decreasing because of the improvement of medical level
+start at 29th line 
+Result:The DALYs value decrease before 2014,and keep stable.
+It may because increase of the medical level of UK had been stuck after 2014
