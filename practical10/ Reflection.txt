@@ -1,0 +1,1 @@
+it is not easy to do all the work. it is fine to write the code to make each point to be 1 or 0. but it is not easy for me to use code  to check and change the number.it is also not easy for me to make all lines in one picture. I learn how to use where() and the np.random.choice().
