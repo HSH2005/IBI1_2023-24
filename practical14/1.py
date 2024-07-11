@@ -1,96 +1,91 @@
-import xml.dom.minidom
-import time
-start = time.time()
-count1 = 0
-count2 = 0
-count3 = 0
-DOMTree = xml.dom.minidom.parse("go_obo.xml")
-collection = DOMTree.documentElement
-namespaces = collection.getElementsByTagName('namespace')
-for namespace in namespaces:
-	ontology = namespace.firstChild.nodeValue.strip()
-	if ontology == "molecular_function" : count1 += 1
-	if ontology == "biological_process" : count2 += 1
-	if ontology == "cellular_component" : count3 += 1
-print(count1,count2,count3)
-end = time.time()
-runTime_ms = (end - start) * 1000
-print("time is", runTime_ms, "millisecond")
-
+Practical 14/go_obo.py
 import xml.sax
-start = time.time()
-class SMLHandler(xml.sax.ContentHandler):
-    def __init__(self):
-        self.element_count = {}
-        self.current_element = ""
- 
-    # 当遇到元素开始时调用
-    def startElement(self, tag, attributes):
-        self.current_element = tag
- 
-    # 当遇到元素结束时调用
-    def endElement(self, tag):
-        if self.current_element in self.element_count:
-            self.element_count[self.current_element] += 1
-        else:
-            self.element_count[self.current_element] = 1
-        self.current_element = ""
- 
-# 使用SAX解析器解析SML文件
-def parse_sml_file(file_path, element_name):
-    parser = xml.sax.make_parser()
-    handler = SMLHandler()
-    parser.setContentHandler(handler)
-    parser.parse(file_path)
-    return handler.element_count.get(element_name, 0)
- 
-# 示例SML文件路径
-sml_file_path = 'heshenghaodeMacBook-Pro/Users/heshenghao/Desktop/practical14/go_obo.sml'
-# 要计算的元素名称
-element_name = 'molecular_function'
-# 计算元素数量
-count = parse_sml_file(sml_file_path, element_name)
-count4 = count
-print(f"{count}")
-count = 0
-element_name = 'biological_process'
-count = parse_sml_file(sml_file_path, element_name)
-count5 = count
-print(f"{count}")
-count = 0
-element_name = 'cellular_component'
-count = parse_sml_file(sml_file_path, element_name)
-print(f"{count}")
-count6 = count
-
-end = time.time()
-runTime_ms1 = (end - start) * 1000
-print("time is", runTime_ms1, "millisecond")
-
-if runTime_ms > runTime_ms1:
-    print("SAX is faster")
-else:
-    print("DOM is better")
-
+import xml.dom.minidom
+from collections import Counter
+import time
 import matplotlib.pyplot as plt
-list = ['molecular_function','biological_process',"cellular_component"]
-list1 = [count1,count2,count3]
-list2 = [count4,count5,count6]
-plt.figure(figsize=(10,6))
-plt.subplot(1,2,1)
-plt.bar(list,list1,color=['b'],width=0.5,hatch='\\')
-for a,b,i in zip(list,list1,range(len(list))):
-    plt.text(a,b+0.03,"%.2f"%list1[i],ha='center',fontsize=10)
-plt.title('DOM')
-plt.ylabel('frequency')
-plt.xlabel('ontologies')
 
-plt.subplot(1,2,2)
-plt.bar(list,list2,cplpr=['r'],width=0.5,hatch='/')
-for a,b,i in zip(list,list2,range(len(list))):
-    plt.text(a,b+0.03,"%.2f"%list2[i],ha='center',fontsize=10)
-plt.title('SAX')
-plt.ylabel('frequency')
-plt.xlabel('ontologies')
-plt.show
-plt.clf
+# Define the ontologies
+ontologies = ['molecular_function', 'biological_process', 'cellular_component']
+
+# Initialize Counters for each ontology
+go_term_counts = {ontology: Counter() for ontology in ontologies}
+
+def parse_with_dom(xml_file):
+    # Parse the XML file using DOM
+    start_time = time.time()
+    dom = xml.dom.minidom.parse(xml_file)
+    terms = dom.getElementsByTagName('term')
+
+    # Iterate over all terms and count them by namespace
+    for term in terms:
+        namespace = term.getElementsByTagName('namespace')[0].firstChild.data
+        go_term_counts[namespace].update([term.getElementsByTagName('id')[0].firstChild.data])
+
+    # Record the time taken
+    dom_time = time.time() - start_time
+    return dom_time
+
+def parse_with_sax(xml_file):
+    # Define a handler for SAX parsing
+    class GOHandler(xml.sax.ContentHandler):
+        def __init__(self):
+            self.current_tag = None
+            self.namespace = None
+
+        def startElement(self, tag, attributes):
+            self.current_tag = tag
+
+        def characters(self, content):
+            if self.current_tag == 'namespace':
+                self.namespace = content
+            elif self.current_tag == 'id':
+                go_term_counts[self.namespace].update([content])
+
+    # Parse the XML file using SAX
+    start_time = time.time()
+    parser = xml.sax.make_parser()
+    handler = GOHandler()
+    parser.setContentHandler(handler)
+    parser.parse(xml_file)
+    
+    # Record the time taken
+    sax_time = time.time() - start_time
+    return sax_time
+
+def plot_results():
+    # Plotting the results
+    for ontology, count in go_term_counts.items():
+        plt.bar(count.keys(), count.values(), label=ontology)
+
+    plt.xlabel('GO Terms')
+    plt.ylabel('Frequency')
+    plt.title('GO Terms Frequency by Ontology')
+    plt.legend()
+    plt.show()
+
+def main():
+    # The path to the XML file
+    xml_file = 'go_obo.xml'
+
+    # Run the DOM parser
+    dom_time = parse_with_dom(xml_file)
+    
+    # Run the SAX parser
+    sax_time = parse_with_sax(xml_file)
+
+    # Print the counts
+    for ontology in ontologies:
+        print(f"{ontology}: {len(go_term_counts[ontology])} terms")
+
+    # Plot the results
+    plot_results()
+
+    # Comment on the fastest parser
+    if dom_time < sax_time:
+        print("### DOM parser was the fastest ###")
+    else:
+        print("### SAX parser was the fastest ###")
+
+if __name__ == '__main__':
+    main()
