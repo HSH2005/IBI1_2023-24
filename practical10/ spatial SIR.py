@@ -38,5 +38,5 @@ while t < 100:
     t = t +1
 
 plt . figure ( figsize =(6 ,4) , dpi=150)
-plt . imshow (population , cmap='viridis ' , interpolation='nearest')
+plt . imshow (population , cmap='viridis' , interpolation='nearest')
 plt.show()
